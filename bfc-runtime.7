@@ -1,0 +1,80 @@
+.TH BFC-RUNTIME 7 "2026-09-25" "bfc" "Miscellaneous Information"
+.SH NAME
+bfc-runtime \- runtime calls available to compiled Brainfuck programs
+.SH DESCRIPTION
+In addition to the eight standard Brainfuck commands,
+.B bfc
+supports
+.B !
+as a runtime-call extension. The current tape cell contains the operation
+number. Arguments follow in subsequent cells, and the operation result
+replaces the current cell unless the operation exits the process. Strings are
+NUL-terminated. File handles are byte values; handle zero is invalid for file
+operations except where an operation explicitly uses it for standard input
+or output.
+.PP
+The available operations are:
+.TP
+.B 1
+Return the program argument count.
+.TP
+.B 2
+Take a zero-based argument index in the next cell, copy that argument as a
+NUL-terminated string starting two cells after the operation, and return its
+length modulo 256.
+.TP
+.B 3
+Take a mode and a NUL-terminated path. Mode 0 opens for reading and selects
+the file for the
+.B ,
+command; mode 1 opens for writing; mode 2 opens for appending. Return a file
+handle, or zero on failure.
+.TP
+.B 4
+Take a file handle and read one byte, returning zero at end of file.
+.TP
+.B 5
+Take a file handle and a byte to write. Return 1 on success.
+.TP
+.B 6
+Take a file handle and close it. Return 1 on success.
+.TP
+.B 7
+Select a file handle for the
+.B ,
+command. Handle zero selects standard input. Return 1 on success.
+.TP
+.B 8
+Select a file handle for the
+.B .
+command. Handle zero selects standard output. Return 1 on success.
+.TP
+.B 9
+Run a NUL-terminated command through the system shell. Return 1 on success.
+.TP
+.B 10
+Create a temporary file, copy its path starting two cells after the operation,
+and select it for the
+.B .
+command.
+.TP
+.B 11
+Take an output path and link the most recent temporary LLVM module with Clang.
+An empty path selects
+.BR a.out .
+Return zero on success and 1 on failure. This operation supports the compiler
+bootstrap.
+.TP
+.B 12
+Exit the process with the status in the next cell.
+.TP
+.B 13
+Return zero when
+.B BFC_BOOTSTRAP=1
+and 1 otherwise. This operation supports the compiler bootstrap.
+.TP
+.B 14
+Write a NUL-terminated message starting two cells after the operation to
+standard error. Return 1 on success.
+.SH SEE ALSO
+.BR bfc (1)

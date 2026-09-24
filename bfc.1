@@ -1,0 +1,59 @@
+.TH BFC 1 "2026-09-25" "bfc" "User Commands"
+.SH NAME
+bfc \- compile Brainfuck source files to native executables
+.SH SYNOPSIS
+.B bfc
+.I source.bf
+.RB [ \-o
+.IR output ]
+.SH DESCRIPTION
+.B bfc
+compiles a Brainfuck source file into a native executable using Clang. The
+source uses the eight standard Brainfuck commands. The
+.B !
+runtime-call extension is described in
+.BR bfc-runtime (7).
+.PP
+If
+.B \-o
+is omitted, the executable is named
+.BR a.out .
+The generated program reads from standard input and writes to standard output
+unless its source uses runtime calls to select other streams.
+.SH OPTIONS
+.TP
+.BI \-o " output"
+Write the executable to
+.IR output .
+The default is
+.BR a.out .
+.SH ENVIRONMENT
+.TP
+.B CLANG
+Name of the Clang executable used to link the generated program. The default
+is
+.BR clang .
+.SH EXIT STATUS
+The compiler exits with status 2 when no source file is given. A successful
+compilation exits with status 0; file and linking errors produce a nonzero
+status.
+.SH EXAMPLES
+Compile
+.I hello.bf
+to an executable named
+.IR hello :
+.PP
+.RS
+.B bfc hello.bf \-o hello
+.br
+.B ./hello
+.RE
+.PP
+Compile to the default output name:
+.PP
+.RS
+.B bfc hello.bf
+.RE
+.SH SEE ALSO
+.BR bfc-runtime (7),
+.BR clang (1)
