@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+COMPILER=$ROOT/build/bfc
+if [ ! -x "$COMPILER" ] ||
+   [ ! -f "$ROOT/build/libbfruntime.a" ] ||
+   [ "$ROOT/bfc.bf" -nt "$COMPILER" ] ||
+   [ "$ROOT/bf-run.c" -nt "$COMPILER" ] ||
+   [ "$ROOT/bf_runtime.c" -nt "$COMPILER" ] ||
+   [ "$ROOT/bf_runtime.h" -nt "$COMPILER" ] ||
+   [ "$ROOT/bootstrap.sh" -nt "$COMPILER" ]; then
+    "$ROOT/bootstrap.sh"
+fi
+
+BFC_RUNTIME_LIB=$ROOT/build/libbfruntime.a
+export BFC_RUNTIME_LIB
+unset BFC_BOOTSTRAP
+exec "$COMPILER" "$@"

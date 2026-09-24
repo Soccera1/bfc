@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "bf_runtime.h"
+
 enum { INITIAL_TAPE_SIZE = 16 };
 
 typedef struct {
@@ -13,7 +15,8 @@ typedef struct {
 
 static int is_command(int byte) {
     return byte == '>' || byte == '<' || byte == '+' || byte == '-' ||
-           byte == '.' || byte == ',' || byte == '[' || byte == ']';
+           byte == '.' || byte == ',' || byte == '[' || byte == ']' ||
+           byte == '!';
 }
 
 static void free_program(Instruction *program, size_t *stack,
@@ -65,10 +68,11 @@ static int grow_left(unsigned char **tape, size_t *capacity, size_t *pointer,
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        fprintf(stderr, "usage: bf-run PROGRAM.bf\n");
+    if (argc < 2) {
+        fprintf(stderr, "usage: bf-run PROGRAM.bf [ARG ...]\n");
         return 2;
     }
+    bf_runtime_init(argc - 1, argv + 1);
 
     FILE *file = fopen(argv[1], "rb");
     if (file == NULL) {
@@ -187,14 +191,14 @@ int main(int argc, char **argv) {
             tape[pointer] = (unsigned char)(tape[pointer] - instruction.count);
             break;
         case '.':
-            if (putchar(tape[pointer]) == EOF) {
+            if (bf_runtime_putchar(tape[pointer]) == EOF) {
                 free(tape);
                 free_program(program, stack, source);
                 return 1;
             }
             break;
         case ',': {
-            int byte = getchar();
+            int byte = bf_runtime_getchar();
             tape[pointer] = byte == EOF ? 0 : (unsigned char)byte;
             break;
         }
@@ -207,6 +211,9 @@ int main(int argc, char **argv) {
             if (tape[pointer] != 0) {
                 pc = instruction.jump;
             }
+            break;
+        case '!':
+            bf_runtime_ffi(&tape, &tape_capacity, pointer);
             break;
         default:
             break;

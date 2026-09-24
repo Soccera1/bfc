@@ -4,16 +4,20 @@ set -eu
 cd "$(dirname "$0")"
 mkdir -p build
 
-# Run the Brainfuck compiler with the fast stage zero interpreter.
-cc -std=c99 -O2 -Wall -Wextra -Werror bf-run.c -o build/bf-run
-{ cat bfc.bf; printf '\000'; } | build/bf-run bfc.bf > build/bfc.ll
-llvm-as build/bfc.ll -o build/bfc.bc
-clang -O0 -x ir build/bfc.ll -o build/bfc
+# Stage zero interprets the Brainfuck compiler.  Its linked runtime supplies
+# the same ! calls used by native bfc programs.
+cc -std=c99 -O2 -Wall -Wextra -Werror -c bf_runtime.c -o build/bf_runtime.o
+ar rcs build/libbfruntime.a build/bf_runtime.o
+cc -std=c99 -O2 -Wall -Wextra -Werror bf-run.c bf_runtime.c -o build/bf-run
 
-# The compiled compiler must regenerate identical IR from its own source.
-{ cat bfc.bf; printf '\000'; } | build/bfc > build/bfc.self.ll
-cmp build/bfc.ll build/bfc.self.ll
-llvm-as build/bfc.self.ll -o build/bfc.self.bc
-clang -O0 -x ir build/bfc.self.ll -o build/bfc.self
+{ cat bfc.bf; printf '\000'; } | BFC_BOOTSTRAP=1 build/bf-run bfc.bf > build/bfc-stage0.ll
+llvm-as build/bfc-stage0.ll -o build/bfc-stage0.bc
+clang -O0 -x ir build/bfc-stage0.ll -x none build/libbfruntime.a -o build/bfc-stage1
 
-printf 'Self-hosting LLVM IR bootstrap complete: build/bfc and build/bfc.self\n'
+# The generated compiler must emit the same LLVM module from its own source.
+{ cat bfc.bf; printf '\000'; } | BFC_BOOTSTRAP=1 build/bfc-stage1 > build/bfc-stage1.ll
+cmp build/bfc-stage0.ll build/bfc-stage1.ll
+llvm-as build/bfc-stage1.ll -o build/bfc-stage1.bc
+clang -O0 -x ir build/bfc-stage1.ll -x none build/libbfruntime.a -o build/bfc
+
+printf 'Self-hosting Brainfuck compiler built: build/bfc\n'
